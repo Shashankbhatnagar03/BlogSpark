@@ -2,8 +2,7 @@ import { Hono } from "hono";
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { sign, verify } from "hono/jwt";
-import * as bcrypt from "bcryptjs";
-
+import { createBlogInput, updateBlogInput } from "hopeisverycommon";
 export const blogRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string;
@@ -40,6 +39,11 @@ blogRouter.use("/*", async (c, next) => {
 blogRouter.post("/", async (c) => {
   const userId = c.get("userId");
   const body = await c.req.json();
+  const { success } = createBlogInput.safeParse(body);
+  if (!success) {
+    c.status(411);
+    return c.json({ error: "Invalid input" });
+  }
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
@@ -65,11 +69,15 @@ blogRouter.post("/", async (c) => {
 blogRouter.put("/", async (c) => {
   const userId = c.get("userId");
   const body = await c.req.json();
+  const { success } = updateBlogInput.safeParse(body);
+  if (!success) {
+    c.status(411);
+    return c.json({ error: "Invalid input" });
+  }
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
-  console.log("userId", userId);
-  console.log(body.id);
+
   try {
     console.log(body.id);
 
